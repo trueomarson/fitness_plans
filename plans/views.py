@@ -5,10 +5,9 @@ from django.views import generic
 from .models import FitnessPlan, Customer
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
-from django.urls import path
 import stripe
 
-stripe.api_key = "sk_test_FPDidkkKUtOcDENbfSC2QynA"
+stripe.api_key = 'sk_test_51JVF0JK6v6fVXC6Sy3Hcr3HxH9kJm05fU8MRqhMzvI96NtJzoTMeQs0SwYyM2qHN91ZNYE65JtdHr8H53J65Wl5800l4kEOLeL'
 
 def home(request):
     plans = FitnessPlan.objects
@@ -31,9 +30,9 @@ def checkout(request):
 
     if request.method == 'POST':
         stripe_customer = stripe.Customer.create(email=request.user.email, source=request.POST['stripeToken'])
-        plan = 'plan_ERgoEpwIlETrU8'
+        plan = 'price_1JVF6BK6v6fVXC6S5TSXaV5V'
         if request.POST['plan'] == 'yearly':
-            plan = 'plan_ERgozHZDvYqClS'
+            plan = 'price_1JVF82K6v6fVXC6SSX26uksC'
         if request.POST['coupon'] in coupons:
             percentage = coupons[request.POST['coupon'].lower()]
             try:
