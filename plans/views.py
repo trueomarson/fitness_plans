@@ -1,13 +1,12 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from django.views.generic.base import RedirectView
-from stripe.api_resources import subscription
 from .forms import CustomSignupForm
 from django.urls import reverse_lazy
 from django.views import generic
 from .models import FitnessPlan, Customer
 from django.contrib.auth import authenticate, login
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
 import stripe
+from django.http import HttpResponse
 
 stripe.api_key = 'sk_test_51JVF0JK6v6fVXC6Sy3Hcr3HxH9kJm05fU8MRqhMzvI96NtJzoTMeQs0SwYyM2qHN91ZNYE65JtdHr8H53J65Wl5800l4kEOLeL'
 
@@ -17,13 +16,13 @@ def home(request):
 
 def plan(request,pk):
     plan = get_object_or_404(FitnessPlan, pk=pk)
-    if plan.premium:
+    if plan.premium :
         if request.user.is_authenticated:
             try:
                 if request.user.customer.membership:
-                    return render(request, 'plans/plan.thml', {'plan:plan}'})
+                    return render(request, 'plans/plan.html', {'plan':plan})
             except Customer.DoesNotExist:
-                return RedirectView('join')
+                    return redirect('join')
         return redirect('join')
     else:
         return render(request, 'plans/plan.html', {'plan':plan})
@@ -36,10 +35,9 @@ def checkout(request):
 
     try:
         if request.user.customer.membership:
-            return redirect('setting')
+            return redirect('settings')
     except Customer.DoesNotExist:
         pass
-           
 
     coupons = {'halloween':31, 'welcome':10}
 
@@ -47,7 +45,7 @@ def checkout(request):
         stripe_customer = stripe.Customer.create(email=request.user.email, source=request.POST['stripeToken'])
         plan = 'price_1JVF6BK6v6fVXC6S5TSXaV5V'
         if request.POST['plan'] == 'yearly':
-            plan = 'price_1JVF82K6v6fVXC6SSX26uksC'
+            plan = 'price_1JVF6BK6v6fVXC6S5TSXaV5V'
         if request.POST['coupon'] in coupons:
             percentage = coupons[request.POST['coupon'].lower()]
             try:
@@ -117,8 +115,22 @@ def settings(request):
             if request.user.customer.cancel_at_period_end:
                 cancel_at_period_end = True
         except Customer.DoesNotExist:
-            membership =False
-    return render(request, 'registration/settings.html', {'membership':membership, 'cancel_at_period':cancel_at_period_end})
+            membership = False
+    return render(request, 'registration/settings.html', {'membership':membership,
+    'cancel_at_period_end':cancel_at_period_end})
+
+@user_passes_test(lambda u: u.is_superuser)
+def updateaccounts(request):
+    customers = Customer.objects.all()
+    for customer in customers:
+        subscription = stripe.Subscription.retrieve(customer.stripe_subscription_id)
+        if subscription.status != 'active':
+            customer.membership = False
+        else:
+            customer.membership = True
+        customer.cancel_at_period_end = subscription.cancel_at_period_end
+        customer.save()
+    return HttpResponse('completed')
 
 class SignUp(generic.CreateView):
     form_class = CustomSignupForm
@@ -131,3 +143,4 @@ class SignUp(generic.CreateView):
         new_user = authenticate(username=username, password=password)
         login(self.request, new_user)
         return valid
+

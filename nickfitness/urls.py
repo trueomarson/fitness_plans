@@ -16,7 +16,6 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from plans import views
-from django.urls import path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -27,4 +26,7 @@ urlpatterns = [
     path('join', views.join, name='join'),
     path('checkout', views.checkout, name='checkout'),
     path('auth/settings', views.settings, name='settings'),
+    path('updateaccounts', views.updateaccounts, name='updateaccounts'),
 ]
+
+
