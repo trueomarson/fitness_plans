@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from stripe.api_resources import customer, subscription
 from .forms import CustomSignupForm
 from django.urls import reverse_lazy
 from django.views import generic
@@ -9,6 +10,19 @@ import stripe
 from django.http import HttpResponse
 
 stripe.api_key = 'sk_test_51JVF0JK6v6fVXC6Sy3Hcr3HxH9kJm05fU8MRqhMzvI96NtJzoTMeQs0SwYyM2qHN91ZNYE65JtdHr8H53J65Wl5800l4kEOLeL'
+
+@user_pasess_test(lambda u: u.is_superuser)
+def updataaccoun(request):
+    customer = Customer.objects.all()
+    for customer in customers:
+        subscription = stripe.retrieve(customer.stripe_subscription_id)
+        if subscription.status != 'active':
+            customer.membership = False
+        else:
+            customer.membership = True
+        customer.cancel_at_period_end = subscription.cancel_at_period_end
+        customer.save()
+        return HttpResponse('completed')
 
 def home(request):
     plans = FitnessPlan.objects
