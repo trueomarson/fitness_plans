@@ -11,18 +11,19 @@ from django.http import HttpResponse
 
 stripe.api_key = 'sk_test_51JVF0JK6v6fVXC6Sy3Hcr3HxH9kJm05fU8MRqhMzvI96NtJzoTMeQs0SwYyM2qHN91ZNYE65JtdHr8H53J65Wl5800l4kEOLeL'
 
-@user_pasess_test(lambda u: u.is_superuser)
-def updataaccoun(request):
-    customer = Customer.objects.all()
+@user_passes_test(lambda u: u.is_superuser)
+def updateaccounts(request):
+    customers = Customer.objects.all()
     for customer in customers:
-        subscription = stripe.retrieve(customer.stripe_subscription_id)
+        subscription = stripe.Subscription.retrieve(customer.stripe_subscription_id)
         if subscription.status != 'active':
             customer.membership = False
         else:
             customer.membership = True
         customer.cancel_at_period_end = subscription.cancel_at_period_end
         customer.save()
-        return HttpResponse('completed')
+    return HttpResponse('completed')
+
 
 def home(request):
     plans = FitnessPlan.objects
@@ -133,18 +134,6 @@ def settings(request):
     return render(request, 'registration/settings.html', {'membership':membership,
     'cancel_at_period_end':cancel_at_period_end})
 
-@user_passes_test(lambda u: u.is_superuser)
-def updateaccounts(request):
-    customers = Customer.objects.all()
-    for customer in customers:
-        subscription = stripe.Subscription.retrieve(customer.stripe_subscription_id)
-        if subscription.status != 'active':
-            customer.membership = False
-        else:
-            customer.membership = True
-        customer.cancel_at_period_end = subscription.cancel_at_period_end
-        customer.save()
-    return HttpResponse('completed')
 
 class SignUp(generic.CreateView):
     form_class = CustomSignupForm
